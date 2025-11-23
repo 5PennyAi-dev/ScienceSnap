@@ -1,4 +1,3 @@
-
 import { Language } from './types';
 
 export const translations = {
@@ -30,6 +29,7 @@ export const translations = {
     galleryTitle: "Your Gallery",
     btnCreateNew: "Create New",
     galleryEmpty: "Your gallery is empty. Create some amazing science infographics!",
+    filterAll: "All Domains",
     modalDetails: "Details",
     modalDomain: "Domain",
     modalTitle: "Title",
@@ -77,6 +77,7 @@ export const translations = {
     galleryTitle: "Votre Galerie",
     btnCreateNew: "Créer Nouveau",
     galleryEmpty: "Votre galerie est vide. Créez des infographies scientifiques incroyables !",
+    filterAll: "Tous les domaines",
     modalDetails: "Détails",
     modalDomain: "Domaine",
     modalTitle: "Titre",

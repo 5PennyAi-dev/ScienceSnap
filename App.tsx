@@ -5,7 +5,7 @@ import { uploadImageToStorage } from './services/imageUploadService';
 import { FactCard } from './components/FactCard';
 import { GalleryGrid } from './components/GalleryGrid';
 import { ImageModal } from './components/ImageModal';
-import { Atom, Microscope, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb } from 'lucide-react';
+import { Atom, Microscope, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter } from 'lucide-react';
 import { db } from './db';
 import { tx, id } from "@instantdb/react";
 import { getTranslation } from './translations';
@@ -24,6 +24,9 @@ const App: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [currentPlan, setCurrentPlan] = useState('');
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  
+  // Gallery Filter State
+  const [filterDomain, setFilterDomain] = useState<string>('All');
   
   // Modal State
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<InfographicItem | null>(null);
@@ -56,6 +59,18 @@ const App: React.FC = () => {
         }
     })).sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [data]);
+
+  // Derived state for domains
+  const uniqueDomains = useMemo(() => {
+    const domains = new Set(gallery.map(item => item.fact.domain));
+    return Array.from(domains).sort();
+  }, [gallery]);
+
+  // Derived state for filtered items
+  const filteredGallery = useMemo(() => {
+    if (filterDomain === 'All') return gallery;
+    return gallery.filter(item => item.fact.domain === filterDomain);
+  }, [gallery, filterDomain]);
 
   useEffect(() => {
     checkApiKey();
@@ -452,7 +467,7 @@ const App: React.FC = () => {
         {/* View: Gallery */}
         {appState === 'gallery' && (
           <div className="animate-fade-in">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold">{t.galleryTitle}</h2>
                 <button 
                     onClick={() => setAppState('input')}
@@ -461,6 +476,36 @@ const App: React.FC = () => {
                     {t.btnCreateNew}
                 </button>
             </div>
+
+            {/* Filter Section */}
+            {gallery.length > 0 && (
+                <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+                    <Filter className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                    <button 
+                        onClick={() => setFilterDomain('All')}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                            filterDomain === 'All' 
+                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' 
+                            : 'bg-slate-800 text-gray-400 hover:bg-slate-700 hover:text-white border border-white/5'
+                        }`}
+                    >
+                        {t.filterAll}
+                    </button>
+                    {uniqueDomains.map(domain => (
+                        <button 
+                            key={domain}
+                            onClick={() => setFilterDomain(domain)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                filterDomain === domain
+                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' 
+                                : 'bg-slate-800 text-gray-400 hover:bg-slate-700 hover:text-white border border-white/5'
+                            }`}
+                        >
+                            {domain}
+                        </button>
+                    ))}
+                </div>
+            )}
             
             {isLoadingGallery ? (
                 <div className="flex justify-center py-20">
@@ -468,7 +513,7 @@ const App: React.FC = () => {
                 </div>
             ) : (
                 <GalleryGrid 
-                    items={gallery} 
+                    items={filteredGallery} 
                     emptyMessage={t.galleryEmpty}
                     onItemClick={(item) => {
                         setSelectedGalleryItem(item);
