@@ -1,6 +1,6 @@
 import React from 'react';
 import { InfographicItem } from '../types';
-import { ExternalLink } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
 interface GalleryGridProps {
   items: InfographicItem[];
@@ -11,8 +11,11 @@ interface GalleryGridProps {
 export const GalleryGrid: React.FC<GalleryGridProps> = ({ items, onItemClick, emptyMessage }) => {
   if (items.length === 0) {
     return (
-      <div className="text-center py-20 text-gray-400">
-        <p>{emptyMessage}</p>
+      <div className="text-center py-24 bg-indigo-900/20 rounded-3xl border border-dashed border-white/10 flex flex-col items-center">
+        <div className="w-16 h-16 bg-indigo-800/50 rounded-full flex items-center justify-center mb-4">
+            <Rocket className="w-8 h-8 text-indigo-400" />
+        </div>
+        <p className="text-indigo-300 font-bold text-lg">{emptyMessage}</p>
       </div>
     );
   }
@@ -22,20 +25,23 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items, onItemClick, em
       {items.map((item) => (
         <div 
           key={item.id}
-          className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer shadow-lg border border-white/10"
+          className="group cursor-pointer flex flex-col gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all duration-300 hover:-translate-y-1"
           onClick={() => onItemClick(item)}
         >
-          <img 
-            src={item.imageUrl} 
-            alt={item.fact.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-            <h4 className="text-white font-bold text-sm truncate">{item.fact.title}</h4>
-            <p className="text-xs text-gray-300 truncate">{item.fact.domain}</p>
-            <div className="absolute top-2 right-2 p-2 bg-black/50 rounded-full">
-                <ExternalLink className="w-4 h-4 text-white" />
-            </div>
+          <div className="relative aspect-[3/4] rounded-xl bg-slate-800 overflow-hidden border border-white/10 shadow-lg group-hover:shadow-purple-500/20 transition-all">
+             <img 
+                src={item.imageUrl} 
+                alt={item.fact.title}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            {/* Hover Shine Effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          
+          <div className="px-1">
+            <h4 className="text-white font-bold text-sm truncate font-space group-hover:text-cyan-300 transition-colors">{item.fact.title}</h4>
+            <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider truncate">{item.fact.domain}</p>
           </div>
         </div>
       ))}

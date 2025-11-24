@@ -1,3 +1,4 @@
+
 import { Language } from './types';
 
 export const translations = {
@@ -41,13 +42,17 @@ export const translations = {
     applyingMagic: "Applying magic...",
     loadingConsulting: "Consulting scientific archives...",
     loadingResearching: "Researching and synthesizing data...",
+    loadingProcessing: "Analyzing and formatting your fact...",
     loadingPlanning: "Designing a visual masterpiece...",
     loadingRendering: "Rendering infographic pixels...",
     loadingSaving: "Saving to Gallery...",
     errorGenFacts: "Something went wrong retrieving facts.",
     errorGenConcept: "Something went wrong explaining the concept.",
+    errorProcessFact: "Could not process your fact.",
     errorGenImage: "Failed to create infographic.",
-    errorSave: "Failed to save infographic."
+    errorSave: "Failed to save infographic.",
+    audienceKids: "For Kids",
+    audienceAdults: "Pro / Adult"
   },
   fr: {
     appTitle: "ScienceSnap",
@@ -89,13 +94,17 @@ export const translations = {
     applyingMagic: "Application de la magie...",
     loadingConsulting: "Consultation des archives scientifiques...",
     loadingResearching: "Recherche et synthèse des données...",
+    loadingProcessing: "Analyse et formatage de votre fait...",
     loadingPlanning: "Conception d'un chef-d'œuvre visuel...",
     loadingRendering: "Rendu des pixels de l'infographie...",
     loadingSaving: "Enregistrement dans la galerie...",
     errorGenFacts: "Problème lors de la récupération des faits.",
     errorGenConcept: "Problème lors de l'explication du concept.",
+    errorProcessFact: "Impossible de traiter votre fait.",
     errorGenImage: "Échec de la création de l'infographie.",
-    errorSave: "Échec de l'enregistrement de l'infographie."
+    errorSave: "Échec de l'enregistrement de l'infographie.",
+    audienceKids: "Pour Enfants",
+    audienceAdults: "Pro / Adulte"
   }
 };
 

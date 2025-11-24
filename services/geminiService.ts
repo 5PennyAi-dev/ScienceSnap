@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { ScientificFact, Language } from "../types";
+import { ScientificFact, Language, Audience } from "../types";
 import { TEXT_MODEL, IMAGE_MODEL, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT } from "../constants";
 
 const getAiClient = () => {
@@ -10,11 +11,34 @@ const getAiClient = () => {
 
 const getLanguageName = (lang: Language) => lang === 'fr' ? 'French' : 'English';
 
-export const generateScientificFacts = async (domain: string, lang: Language): Promise<ScientificFact[]> => {
+const AUDIENCE_CONFIG = {
+  young: {
+    target: "young audiences (8-10 years old)",
+    tone: "enthusiastic, playful, and accessible",
+    visualStyle: "joyful color palette, fun illustrations, cartoon style, and energetic layout"
+  },
+  adult: {
+    target: "adult audiences and university students",
+    tone: "professional, rigorous, sophisticated, and engaging",
+    visualStyle: "sober color palette, modern minimalist style, schematic diagrams, and high-quality editorial design"
+  }
+};
+
+const injectAudience = (prompt: string, audience: Audience) => {
+  const config = AUDIENCE_CONFIG[audience];
+  return prompt
+    .replace(/{{TARGET_AUDIENCE}}/g, config.target)
+    .replace(/{{TONE}}/g, config.tone)
+    .replace(/{{VISUAL_STYLE}}/g, config.visualStyle);
+};
+
+export const generateScientificFacts = async (domain: string, lang: Language, audience: Audience): Promise<ScientificFact[]> => {
   const ai = getAiClient();
-  const prompt = FACT_GENERATION_PROMPT
+  let prompt = FACT_GENERATION_PROMPT
     .replace('{{DOMAIN}}', domain)
     .replace('{{LANGUAGE}}', getLanguageName(lang));
+  
+  prompt = injectAudience(prompt, audience);
 
   try {
     const response = await ai.models.generateContent({
@@ -47,11 +71,13 @@ export const generateScientificFacts = async (domain: string, lang: Language): P
   }
 };
 
-export const generateFactFromConcept = async (concept: string, lang: Language): Promise<ScientificFact> => {
+export const generateFactFromConcept = async (concept: string, lang: Language, audience: Audience): Promise<ScientificFact> => {
   const ai = getAiClient();
-  const prompt = CONCEPT_EXPLANATION_PROMPT
+  let prompt = CONCEPT_EXPLANATION_PROMPT
     .replace('{{CONCEPT}}', concept)
     .replace('{{LANGUAGE}}', getLanguageName(lang));
+    
+  prompt = injectAudience(prompt, audience);
 
   try {
     const response = await ai.models.generateContent({
@@ -81,14 +107,15 @@ export const generateFactFromConcept = async (concept: string, lang: Language): 
   }
 };
 
-export const generateInfographicPlan = async (fact: ScientificFact, lang: Language): Promise<string> => {
+export const generateInfographicPlan = async (fact: ScientificFact, lang: Language, audience: Audience): Promise<string> => {
   const ai = getAiClient();
-  // Using global regex replacement instead of replaceAll for compatibility
-  const prompt = INFOGRAPHIC_PLAN_PROMPT
+  let prompt = INFOGRAPHIC_PLAN_PROMPT
     .replace('{{DOMAIN}}', fact.domain)
     .replace('{{TITLE}}', fact.title)
     .replace('{{TEXT}}', fact.text)
     .replace(/{{LANGUAGE}}/g, getLanguageName(lang));
+
+  prompt = injectAudience(prompt, audience);
 
   try {
     const response = await ai.models.generateContent({
@@ -114,7 +141,6 @@ export const generateInfographicImage = async (plan: string): Promise<string> =>
       config: {
         imageConfig: {
           aspectRatio: "3:4", // Portrait for infographics
-          imageSize: "1K"
         }
       }
     });
@@ -157,7 +183,6 @@ export const editInfographic = async (base64Image: string, instruction: string):
       config: {
         imageConfig: {
             aspectRatio: "3:4", 
-            imageSize: "1K" 
         }
       }
     });
