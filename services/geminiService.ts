@@ -259,7 +259,14 @@ export const generateInfographicImage = async (plan: string, model: ImageModelTy
     // Check if the model refused to generate the image (e.g. Safety or Recitation)
     const candidate = response.candidates?.[0];
     if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
-        throw new Error(`Image generation blocked. Reason: ${candidate.finishReason}. The content might be violating safety policies.`);
+        const reason = candidate.finishReason;
+        let userMessage = `Image generation failed (${reason}).`;
+        if (reason === 'SAFETY') {
+            userMessage = "Image generation blocked by safety filters. Please try modifying the concept or fact.";
+        } else if (reason === 'RECITATION') {
+            userMessage = "Image generation blocked due to recitation (copyright) check.";
+        }
+        throw new Error(userMessage);
     }
 
     // Log text response if it failed to generate image (helps debugging)
@@ -269,7 +276,7 @@ export const generateInfographicImage = async (plan: string, model: ImageModelTy
       throw new Error(`Model returned text instead of image: "${textPart.text.substring(0, 100)}..."`);
     }
     
-    throw new Error("No image data found in response");
+    throw new Error("No image data found in response. Please try again.");
   } catch (error) {
     console.error("Error generating image:", error);
     throw error;

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { InfographicItem, ImageModelType, AspectRatio, ArtStyle } from '../types';
 import { X, Download, Wand2, RefreshCcw, Loader2 } from 'lucide-react';
@@ -9,6 +10,11 @@ interface ImageModalLabels {
   modalTitle: string;
   modalFact: string;
   modalEditLabel: string;
+  modalStyle: string;
+  modalAudience: string;
+  modalRatio: string;
+  modalModel: string;
+  modalLanguage: string;
   placeholderEdit: string;
   btnDownload: string;
   downloading: string;
@@ -130,6 +136,36 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
                 <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.modalTitle}</h3>
                 <p className="text-white text-lg font-bold">{item.fact.title}</p>
             </div>
+            
+            {/* Metadata Chips */}
+            <div className="flex flex-wrap gap-2">
+                {item.audience && (
+                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-indigo-200">
+                        {labels.modalAudience}: {item.audience}
+                    </span>
+                )}
+                {item.style && (
+                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-indigo-200">
+                        {labels.modalStyle}: {item.style}
+                    </span>
+                )}
+                {item.aspectRatio && (
+                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-indigo-200">
+                        {labels.modalRatio}: {item.aspectRatio}
+                    </span>
+                )}
+                {item.modelName && (
+                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-indigo-200">
+                        {labels.modalModel}: {item.modelName}
+                    </span>
+                )}
+                {item.language && (
+                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-indigo-200">
+                        {labels.modalLanguage}: {item.language.toUpperCase()}
+                    </span>
+                )}
+            </div>
+
             <div>
                 <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.modalFact}</h3>
                 <p className="text-gray-300 text-sm leading-relaxed">{item.fact.text}</p>

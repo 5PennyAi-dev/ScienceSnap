@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppState, ScientificFact, InfographicItem, Language, AIStudio, Audience, ImageModelType, AspectRatio, ArtStyle } from './types';
 import { generateScientificFacts, generateInfographicPlan, generateInfographicImage, generateFactFromConcept } from './services/geminiService';
@@ -65,7 +66,12 @@ const App: React.FC = () => {
             title: item.title,
             domain: item.domain,
             text: item.text
-        }
+        },
+        aspectRatio: item.aspectRatio,
+        style: item.style,
+        audience: item.audience,
+        modelName: item.modelName,
+        language: item.language
     })).sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [data]);
 
@@ -183,12 +189,15 @@ const App: React.FC = () => {
       
     } catch (err: any) {
        console.error("Infographic Generation Failed:", err);
-       setError(err.message || t.errorGenImage);
+       const errorMessage = err.message || t.errorGenImage;
+       setError(errorMessage);
        
-       // Better error fallback: don't lose context if possible
+       // Handle state transition on error
+       // If we have facts, return to selection screen to let user try another
        if (facts.length > 0) {
            setAppState('selection');
        } else {
+           // If concept mode (no fact list), go back to input but ensure error is visible
            setAppState('input');
        }
     } finally {
@@ -218,7 +227,13 @@ const App: React.FC = () => {
             domain: selectedFact.domain,
             text: selectedFact.text,
             plan: currentPlan,
-            imageUrl: imageUrlToSave
+            imageUrl: imageUrlToSave,
+            // New fields
+            aspectRatio: aspectRatio,
+            style: artStyle,
+            audience: audience,
+            modelName: imageModel,
+            language: language
         }));
         
         setAppState('gallery');
@@ -330,6 +345,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+             {/* Gallery button - Always Visible */}
              <button 
                 onClick={() => setAppState('gallery')}
                 className={`p-2 rounded-lg transition-colors ${appState === 'gallery' ? 'bg-white/10 text-white' : 'text-indigo-300 hover:text-white'}`}

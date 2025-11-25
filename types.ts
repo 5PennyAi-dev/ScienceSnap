@@ -11,6 +11,12 @@ export interface InfographicItem {
   fact: ScientificFact;
   imageUrl: string; // Base64
   plan: string;
+  // Metadata fields
+  aspectRatio?: AspectRatio;
+  style?: ArtStyle;
+  audience?: Audience;
+  modelName?: string;
+  language?: Language;
 }
 
 export type AppState = 'input' | 'selection' | 'planning' | 'generating' | 'result' | 'gallery';
