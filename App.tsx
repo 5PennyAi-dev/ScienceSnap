@@ -7,21 +7,22 @@ import { FactCard } from './components/FactCard';
 import { GalleryGrid } from './components/GalleryGrid';
 import { ImageModal } from './components/ImageModal';
 import { StyleSelector } from './components/StyleSelector';
-import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby, Zap, Square, RectangleVertical, RectangleHorizontal, Smartphone, AlertCircle, XCircle } from 'lucide-react';
+import { FilterPill } from './components/FilterPill';
+import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby, Zap, Square, RectangleVertical, RectangleHorizontal, Smartphone, AlertCircle, XCircle, X } from 'lucide-react';
 import { db } from './db';
 import { tx, id } from "@instantdb/react";
 import { getTranslation } from './translations';
-import { IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO } from './constants';
+import { IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO, STYLE_CONFIG } from './constants';
 
 const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('fr');
   const [audience, setAudience] = useState<Audience>('young');
   const [imageModel, setImageModel] = useState<ImageModelType>(IMAGE_MODEL_PRO);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(AspectRatio.LANDSCAPE);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(AspectRatio.TALL);
   const [artStyle, setArtStyle] = useState<ArtStyle>('DEFAULT');
   const [appState, setAppState] = useState<AppState>('input');
   
-  // Search State
+  // Search State for Generation
   const [searchMode, setSearchMode] = useState<'domain' | 'concept'>('domain');
   const [query, setQuery] = useState('');
 
@@ -37,6 +38,10 @@ const App: React.FC = () => {
 
   // Gallery Filter State
   const [filterDomain, setFilterDomain] = useState<string>('All');
+  const [filterAudience, setFilterAudience] = useState<string>('All');
+  const [filterStyle, setFilterStyle] = useState<string>('All');
+  const [filterLanguage, setFilterLanguage] = useState<string>('All');
+  const [gallerySearchQuery, setGallerySearchQuery] = useState('');
   
   // Modal State
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<InfographicItem | null>(null);
@@ -83,9 +88,31 @@ const App: React.FC = () => {
 
   // Derived state for filtered items
   const filteredGallery = useMemo(() => {
-    if (filterDomain === 'All') return gallery;
-    return gallery.filter(item => item.fact.domain === filterDomain);
-  }, [gallery, filterDomain]);
+    return gallery.filter(item => {
+        const matchDomain = filterDomain === 'All' || item.fact.domain === filterDomain;
+        const matchAudience = filterAudience === 'All' || item.audience === filterAudience;
+        const matchStyle = filterStyle === 'All' || item.style === filterStyle;
+        const matchLanguage = filterLanguage === 'All' || item.language === filterLanguage;
+        
+        // Search by Title or Domain
+        const searchLower = gallerySearchQuery.toLowerCase().trim();
+        const matchSearch = searchLower === '' || 
+                            item.fact.title.toLowerCase().includes(searchLower) ||
+                            item.fact.domain.toLowerCase().includes(searchLower);
+
+        return matchDomain && matchAudience && matchStyle && matchLanguage && matchSearch;
+    });
+  }, [gallery, filterDomain, filterAudience, filterStyle, filterLanguage, gallerySearchQuery]);
+
+  const hasActiveFilters = filterDomain !== 'All' || filterAudience !== 'All' || filterStyle !== 'All' || filterLanguage !== 'All' || gallerySearchQuery !== '';
+
+  const clearFilters = () => {
+      setFilterDomain('All');
+      setFilterAudience('All');
+      setFilterStyle('All');
+      setFilterLanguage('All');
+      setGallerySearchQuery('');
+  };
 
   useEffect(() => {
     checkApiKey();
@@ -591,35 +618,82 @@ const App: React.FC = () => {
 
         {/* GALLERY STATE */}
         {appState === 'gallery' && (
-             <div className="animate-fade-in">
-                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                     <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => setAppState('input')}
-                            className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-white" />
-                        </button>
-                        <h2 className="text-3xl font-space font-bold text-white">{t.galleryTitle}</h2>
-                     </div>
-
-                     <div className="flex items-center gap-3 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                        <Filter className="w-4 h-4 text-indigo-400" />
-                        <button 
-                            onClick={() => setFilterDomain('All')}
-                            className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filterDomain === 'All' ? 'bg-white text-indigo-900' : 'bg-white/5 text-indigo-300 hover:bg-white/10'}`}
-                        >
-                            {t.filterAll}
-                        </button>
-                        {uniqueDomains.map(d => (
+             <div className="animate-fade-in max-w-7xl mx-auto">
+                 {/* Gallery Header */}
+                 <div className="flex flex-col gap-6 mb-8">
+                     <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-4">
                             <button 
-                                key={d}
-                                onClick={() => setFilterDomain(d)}
-                                className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filterDomain === d ? 'bg-white text-indigo-900' : 'bg-white/5 text-indigo-300 hover:bg-white/10'}`}
+                                onClick={() => setAppState('input')}
+                                className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                             >
-                                {d}
+                                <ArrowLeft className="w-5 h-5 text-white" />
                             </button>
-                        ))}
+                            <h2 className="text-3xl font-space font-bold text-white">{t.galleryTitle}</h2>
+                         </div>
+                     </div>
+                     
+                     {/* Filter Toolbar */}
+                     <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-2 flex flex-col md:flex-row gap-2">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400" />
+                            <input 
+                                type="text"
+                                value={gallerySearchQuery}
+                                onChange={(e) => setGallerySearchQuery(e.target.value)}
+                                placeholder={t.searchGalleryPlaceholder}
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"
+                            />
+                        </div>
+
+                        {/* Filter Pills */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <FilterPill 
+                                label={t.filterLabelDomain}
+                                value={filterDomain}
+                                options={uniqueDomains}
+                                onSelect={setFilterDomain}
+                                allLabel={t.filterAll}
+                            />
+                            <FilterPill 
+                                label={t.filterLabelAudience}
+                                value={filterAudience}
+                                options={[
+                                    { label: t.audienceKids, value: 'young' },
+                                    { label: t.audienceAdults, value: 'adult' }
+                                ]}
+                                onSelect={setFilterAudience}
+                                allLabel={t.filterAll}
+                            />
+                            <FilterPill 
+                                label={t.filterLabelStyle}
+                                value={filterStyle}
+                                options={Object.keys(STYLE_CONFIG)}
+                                onSelect={setFilterStyle}
+                                allLabel={t.filterAll}
+                            />
+                            <FilterPill 
+                                label={t.filterLabelLanguage}
+                                value={filterLanguage}
+                                options={[
+                                    { label: 'English', value: 'en' },
+                                    { label: 'Français', value: 'fr' }
+                                ]}
+                                onSelect={setFilterLanguage}
+                                allLabel={t.filterAll}
+                            />
+                            
+                            {hasActiveFilters && (
+                                <button 
+                                    onClick={clearFilters}
+                                    className="px-3 py-2 text-xs font-bold text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                    <X className="w-3 h-3" />
+                                    {t.btnResetFilters}
+                                </button>
+                            )}
+                        </div>
                      </div>
                  </div>
 
@@ -627,12 +701,27 @@ const App: React.FC = () => {
                     <div className="flex justify-center py-20">
                         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                     </div>
-                ) : (
+                ) : filteredGallery.length > 0 ? (
                     <GalleryGrid 
                         items={filteredGallery} 
                         onItemClick={handleGalleryClick}
                         emptyMessage={t.galleryEmpty}
                     />
+                ) : (
+                    /* No Results State */
+                    <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-white/5 rounded-3xl bg-white/5">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                            <Filter className="w-8 h-8 text-indigo-400 opacity-50" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">{t.noResultsTitle}</h3>
+                        <p className="text-indigo-300 max-w-sm">{t.noResultsDesc}</p>
+                        <button 
+                            onClick={clearFilters}
+                            className="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors"
+                        >
+                            {t.btnResetFilters}
+                        </button>
+                    </div>
                 )}
              </div>
         )}
