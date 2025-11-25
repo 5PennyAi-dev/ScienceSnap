@@ -1,18 +1,16 @@
-
-
 import React, { useState } from 'react';
-import { InfographicItem, ImageModelType, AspectRatio } from '../types';
+import { InfographicItem, ImageModelType, AspectRatio, ArtStyle } from '../types';
 import { X, Download, Wand2, RefreshCcw, Loader2 } from 'lucide-react';
 import { editInfographic } from '../services/geminiService';
 
 interface ImageModalLabels {
-  details: string;
-  domain: string;
-  title: string;
-  fact: string;
-  editLabel: string;
+  modalDetails: string;
+  modalDomain: string;
+  modalTitle: string;
+  modalFact: string;
+  modalEditLabel: string;
   placeholderEdit: string;
-  download: string;
+  btnDownload: string;
   downloading: string;
   applyingMagic: string;
 }
@@ -25,9 +23,10 @@ interface ImageModalProps {
   labels: ImageModalLabels;
   model: ImageModelType;
   aspectRatio: AspectRatio;
+  style: ArtStyle;
 }
 
-export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, onUpdate, labels, model, aspectRatio }) => {
+export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, onUpdate, labels, model, aspectRatio, style }) => {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -78,7 +77,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
     setIsEditing(true);
     setError(null);
     try {
-      const newImageUrl = await editInfographic(item.imageUrl, editPrompt, model, aspectRatio);
+      const newImageUrl = await editInfographic(item.imageUrl, editPrompt, model, aspectRatio, style);
       onUpdate({ ...item, imageUrl: newImageUrl });
       setEditPrompt('');
     } catch (err) {
@@ -116,7 +115,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
         {/* Controls Section */}
         <div className="w-full md:w-96 p-6 flex flex-col border-l border-white/10 bg-slate-800/50">
           <div className="flex justify-between items-center mb-6">
-             <h2 className="text-xl font-bold text-white">{labels.details}</h2>
+             <h2 className="text-xl font-bold text-white">{labels.modalDetails}</h2>
              <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                <X className="w-6 h-6 text-gray-400" />
              </button>
@@ -124,22 +123,22 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
 
           <div className="mb-6 space-y-4 overflow-y-auto flex-1">
             <div>
-                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.domain}</h3>
+                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.modalDomain}</h3>
                 <p className="text-white text-sm">{item.fact.domain}</p>
             </div>
             <div>
-                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.title}</h3>
+                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.modalTitle}</h3>
                 <p className="text-white text-lg font-bold">{item.fact.title}</p>
             </div>
             <div>
-                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.fact}</h3>
+                <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">{labels.modalFact}</h3>
                 <p className="text-gray-300 text-sm leading-relaxed">{item.fact.text}</p>
             </div>
           </div>
 
           <div className="mt-auto space-y-4">
              <div className="p-4 bg-slate-950 rounded-xl border border-white/10">
-                <label className="block text-sm font-medium text-gray-300 mb-2">{labels.editLabel}</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{labels.modalEditLabel}</label>
                 <div className="flex gap-2">
                     <input 
                         type="text"
@@ -174,7 +173,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
                 ) : (
                     <>
                         <Download className="w-4 h-4" />
-                        {labels.download}
+                        {labels.btnDownload}
                     </>
                 )}
             </button>

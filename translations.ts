@@ -1,5 +1,4 @@
 
-
 import { Language } from './types';
 
 export const translations = {
@@ -59,7 +58,16 @@ export const translations = {
     ratioSquare: "Square (1:1)",
     ratioPortrait: "Portrait (3:4)",
     ratioLandscape: "Landscape (4:3)",
-    ratioTall: "Tall (9:16)"
+    ratioTall: "Tall (9:16)",
+    styleLabel: "Art Style",
+    styleDefault: "Default",
+    stylePixel: "Pixel Art",
+    styleClay: "Claymation",
+    styleOrigami: "Origami",
+    styleWatercolor: "Watercolor",
+    styleCyberpunk: "Cyberpunk",
+    styleVintage: "Vintage",
+    styleNeon: "Neon"
   },
   fr: {
     appTitle: "ScienceSnap",
@@ -117,7 +125,16 @@ export const translations = {
     ratioSquare: "Carré (1:1)",
     ratioPortrait: "Portrait (3:4)",
     ratioLandscape: "Paysage (4:3)",
-    ratioTall: "Grand (9:16)"
+    ratioTall: "Grand (9:16)",
+    styleLabel: "Style Artistique",
+    styleDefault: "Défaut",
+    stylePixel: "Pixel Art",
+    styleClay: "Pâte à modeler",
+    styleOrigami: "Origami",
+    styleWatercolor: "Aquarelle",
+    styleCyberpunk: "Cyberpunk",
+    styleVintage: "Vintage",
+    styleNeon: "Néon"
   }
 };
 

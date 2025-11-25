@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ScientificFact, Language, Audience, ImageModelType, AspectRatio } from "../types";
-import { TEXT_MODEL, IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT } from "../constants";
+import { ScientificFact, Language, Audience, ImageModelType, AspectRatio, ArtStyle } from "../types";
+import { TEXT_MODEL, IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT, STYLE_CONFIG } from "../constants";
 
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
@@ -23,12 +23,19 @@ const AUDIENCE_CONFIG = {
   }
 };
 
-const injectAudience = (prompt: string, audience: Audience) => {
-  const config = AUDIENCE_CONFIG[audience];
+// Helper to inject audience and style settings
+// Uses replacer functions () => string to safely handle special characters in replacement values
+const injectContext = (prompt: string, audience: Audience, style: ArtStyle = 'DEFAULT') => {
+  const audienceConfig = AUDIENCE_CONFIG[audience];
+  const stylePrompt = STYLE_CONFIG[style];
+  
+  // If a specific style is selected, it overrides the audience default visual style
+  const visualStyle = style !== 'DEFAULT' ? stylePrompt : audienceConfig.visualStyle;
+
   return prompt
-    .replace(/{{TARGET_AUDIENCE}}/g, config.target)
-    .replace(/{{TONE}}/g, config.tone)
-    .replace(/{{VISUAL_STYLE}}/g, config.visualStyle);
+    .replace(/{{TARGET_AUDIENCE}}/g, () => audienceConfig.target)
+    .replace(/{{TONE}}/g, () => audienceConfig.tone)
+    .replace(/{{VISUAL_STYLE}}/g, () => visualStyle);
 };
 
 // Helper to ensure we have a base64 string
@@ -72,15 +79,16 @@ const ensureBase64 = async (input: string): Promise<{ data: string, mimeType: st
 export const generateScientificFacts = async (domain: string, lang: Language, audience: Audience): Promise<ScientificFact[]> => {
   const ai = getAiClient();
   let prompt = FACT_GENERATION_PROMPT
-    .replace('{{DOMAIN}}', domain)
-    .replace('{{LANGUAGE}}', getLanguageName(lang));
+    .replace('{{DOMAIN}}', () => domain)
+    .replace('{{LANGUAGE}}', () => getLanguageName(lang));
   
-  prompt = injectAudience(prompt, audience);
+  // Facts generation doesn't strictly need Visual Style, so we pass DEFAULT
+  prompt = injectContext(prompt, audience, 'DEFAULT');
 
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -99,7 +107,13 @@ export const generateScientificFacts = async (domain: string, lang: Language, au
     });
 
     const text = response.text;
-    if (!text) throw new Error("No text returned from Gemini");
+    if (!text) {
+        const candidate = response.candidates?.[0];
+        if (candidate?.finishReason) {
+             throw new Error(`Gemini blocked fact generation. Reason: ${candidate.finishReason}`);
+        }
+        throw new Error("No text returned from Gemini");
+    }
     
     return JSON.parse(text) as ScientificFact[];
   } catch (error) {
@@ -111,15 +125,15 @@ export const generateScientificFacts = async (domain: string, lang: Language, au
 export const generateFactFromConcept = async (concept: string, lang: Language, audience: Audience): Promise<ScientificFact> => {
   const ai = getAiClient();
   let prompt = CONCEPT_EXPLANATION_PROMPT
-    .replace('{{CONCEPT}}', concept)
-    .replace('{{LANGUAGE}}', getLanguageName(lang));
+    .replace('{{CONCEPT}}', () => concept)
+    .replace('{{LANGUAGE}}', () => getLanguageName(lang));
     
-  prompt = injectAudience(prompt, audience);
+  prompt = injectContext(prompt, audience, 'DEFAULT');
 
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -135,7 +149,13 @@ export const generateFactFromConcept = async (concept: string, lang: Language, a
     });
 
     const text = response.text;
-    if (!text) throw new Error("No text returned from Gemini");
+    if (!text) {
+        const candidate = response.candidates?.[0];
+        if (candidate?.finishReason) {
+             throw new Error(`Gemini blocked concept generation. Reason: ${candidate.finishReason}`);
+        }
+        throw new Error("No text returned from Gemini");
+    }
     
     return JSON.parse(text) as ScientificFact;
   } catch (error) {
@@ -144,7 +164,7 @@ export const generateFactFromConcept = async (concept: string, lang: Language, a
   }
 };
 
-export const generateInfographicPlan = async (fact: ScientificFact, lang: Language, audience: Audience): Promise<string> => {
+export const generateInfographicPlan = async (fact: ScientificFact, lang: Language, audience: Audience, style: ArtStyle): Promise<string> => {
   const ai = getAiClient();
   
   // Use replacer functions (() => value) to avoid issues if the content contains special replacement patterns like '$&'
@@ -154,22 +174,23 @@ export const generateInfographicPlan = async (fact: ScientificFact, lang: Langua
     .replace('{{TEXT}}', () => fact.text)
     .replace(/{{LANGUAGE}}/g, () => getLanguageName(lang));
 
-  prompt = injectAudience(prompt, audience);
+  prompt = injectContext(prompt, audience, style);
 
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
     });
 
     const text = response.text;
     
     if (!text) {
-        // Check for safety blockage
-        if (response.candidates?.[0]?.finishReason === 'SAFETY') {
-            throw new Error("Plan generation was blocked by safety settings.");
+        const candidate = response.candidates?.[0];
+        // Check for safety blockage or other finish reasons
+        if (candidate?.finishReason) {
+            throw new Error(`Plan generation blocked. Reason: ${candidate.finishReason}`);
         }
-        throw new Error("No plan returned from Gemini");
+        throw new Error("No plan returned from Gemini (Empty response)");
     }
     return text;
   } catch (error) {
@@ -178,7 +199,7 @@ export const generateInfographicPlan = async (fact: ScientificFact, lang: Langua
   }
 };
 
-export const generateInfographicImage = async (plan: string, model: ImageModelType, aspectRatio: AspectRatio): Promise<string> => {
+export const generateInfographicImage = async (plan: string, model: ImageModelType, aspectRatio: AspectRatio, style: ArtStyle): Promise<string> => {
   const ai = getAiClient();
 
   const config: any = {
@@ -191,13 +212,18 @@ export const generateInfographicImage = async (plan: string, model: ImageModelTy
       config.imageConfig.imageSize = "1K";
   }
 
+  let styleInstruction = "";
+  if (style !== 'DEFAULT') {
+      styleInstruction = `\n\n**IMPORTANT VISUAL STYLE**: The infographic MUST be rendered in the following style: ${STYLE_CONFIG[style]}`;
+  }
+
   // Explicit instruction to ensure the model behaves as an image generator
-  const prompt = `Generate a high-quality educational infographic image based on the following detailed plan:\n\n${plan}`;
+  const prompt = `Generate a high-quality educational infographic image based on the following detailed plan:${styleInstruction}\n\n${plan}`;
 
   try {
     const response = await ai.models.generateContent({
       model: model,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
       config: config
     });
 
@@ -222,7 +248,7 @@ export const generateInfographicImage = async (plan: string, model: ImageModelTy
   }
 };
 
-export const editInfographic = async (imageInput: string, instruction: string, model: ImageModelType, aspectRatio: AspectRatio): Promise<string> => {
+export const editInfographic = async (imageInput: string, instruction: string, model: ImageModelType, aspectRatio: AspectRatio, style: ArtStyle): Promise<string> => {
   const ai = getAiClient();
   try {
     // Ensure we have valid base64 data and mimeType, even if input is a URL
@@ -238,12 +264,17 @@ export const editInfographic = async (imageInput: string, instruction: string, m
         config.imageConfig.imageSize = "1K";
     }
 
+    let styleInstruction = "";
+    if (style !== 'DEFAULT') {
+        styleInstruction = ` Maintain the ${style} visual style.`;
+    }
+
     const response = await ai.models.generateContent({
       model: model,
       contents: {
         parts: [
           {
-            text: `Edit this image: ${instruction}`
+            text: `Edit this image: ${instruction}.${styleInstruction}`
           },
           {
             inlineData: {

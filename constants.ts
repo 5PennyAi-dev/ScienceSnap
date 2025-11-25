@@ -1,9 +1,22 @@
 
+import { ArtStyle } from './types';
 
 // Models
 export const TEXT_MODEL = 'gemini-2.5-flash';
 export const IMAGE_MODEL_FLASH = 'gemini-2.5-flash-image';
 export const IMAGE_MODEL_PRO = 'gemini-3-pro-image-preview';
+
+// Styles
+export const STYLE_CONFIG: Record<ArtStyle, string> = {
+  DEFAULT: "", // Will fall back to audience default
+  PIXEL: "8-bit pixel art style, vibrant colors, retro video game aesthetic, blocky details",
+  CLAY: "3D claymation style, plasticine texture, handmade look, soft lighting, stop-motion animation feel",
+  ORIGAMI: "Paper cutout style, layered paper texture, origami folds, slight shadows for depth, craft aesthetic",
+  WATERCOLOR: "Soft watercolor painting, artistic brush strokes, pastel colors, fluid blending, on textured paper background",
+  CYBERPUNK: "Futuristic cyberpunk style, neon lights, glowing accents, dark background, high contrast, digital sci-fi look",
+  VINTAGE: "Vintage science textbook illustration, lithograph style, muted earth tones, aged paper texture, detailed line work",
+  NEON: "Minimalist neon line art, glowing vector lines on deep black background, high contrast, modern and sleek"
+};
 
 // Prompts
 export const FACT_GENERATION_PROMPT = `
