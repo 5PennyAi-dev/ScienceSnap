@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ScientificFact, Language, Audience, ImageModelType } from "../types";
+import { ScientificFact, Language, Audience, ImageModelType, AspectRatio } from "../types";
 import { TEXT_MODEL, IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT } from "../constants";
 
 const getAiClient = () => {
@@ -80,7 +80,7 @@ export const generateScientificFacts = async (domain: string, lang: Language, au
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -119,7 +119,7 @@ export const generateFactFromConcept = async (concept: string, lang: Language, a
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -146,22 +146,31 @@ export const generateFactFromConcept = async (concept: string, lang: Language, a
 
 export const generateInfographicPlan = async (fact: ScientificFact, lang: Language, audience: Audience): Promise<string> => {
   const ai = getAiClient();
+  
+  // Use replacer functions (() => value) to avoid issues if the content contains special replacement patterns like '$&'
   let prompt = INFOGRAPHIC_PLAN_PROMPT
-    .replace('{{DOMAIN}}', fact.domain)
-    .replace('{{TITLE}}', fact.title)
-    .replace('{{TEXT}}', fact.text)
-    .replace(/{{LANGUAGE}}/g, getLanguageName(lang));
+    .replace('{{DOMAIN}}', () => fact.domain)
+    .replace('{{TITLE}}', () => fact.title)
+    .replace('{{TEXT}}', () => fact.text)
+    .replace(/{{LANGUAGE}}/g, () => getLanguageName(lang));
 
   prompt = injectAudience(prompt, audience);
 
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
     });
 
     const text = response.text;
-    if (!text) throw new Error("No plan returned from Gemini");
+    
+    if (!text) {
+        // Check for safety blockage
+        if (response.candidates?.[0]?.finishReason === 'SAFETY') {
+            throw new Error("Plan generation was blocked by safety settings.");
+        }
+        throw new Error("No plan returned from Gemini");
+    }
     return text;
   } catch (error) {
     console.error("Error generating plan:", error);
@@ -169,12 +178,12 @@ export const generateInfographicPlan = async (fact: ScientificFact, lang: Langua
   }
 };
 
-export const generateInfographicImage = async (plan: string, model: ImageModelType): Promise<string> => {
+export const generateInfographicImage = async (plan: string, model: ImageModelType, aspectRatio: AspectRatio): Promise<string> => {
   const ai = getAiClient();
 
   const config: any = {
       imageConfig: {
-          aspectRatio: "3:4", 
+          aspectRatio: aspectRatio, 
       }
   };
 
@@ -213,7 +222,7 @@ export const generateInfographicImage = async (plan: string, model: ImageModelTy
   }
 };
 
-export const editInfographic = async (imageInput: string, instruction: string, model: ImageModelType): Promise<string> => {
+export const editInfographic = async (imageInput: string, instruction: string, model: ImageModelType, aspectRatio: AspectRatio): Promise<string> => {
   const ai = getAiClient();
   try {
     // Ensure we have valid base64 data and mimeType, even if input is a URL
@@ -221,7 +230,7 @@ export const editInfographic = async (imageInput: string, instruction: string, m
 
     const config: any = {
         imageConfig: {
-            aspectRatio: "3:4", 
+            aspectRatio: aspectRatio, 
         }
     };
 

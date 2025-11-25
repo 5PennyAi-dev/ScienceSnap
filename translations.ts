@@ -55,7 +55,11 @@ export const translations = {
     audienceKids: "For Kids",
     audienceAdults: "Pro / Adult",
     modelFlash: "Flash",
-    modelPro: "Pro (HD)"
+    modelPro: "Pro (HD)",
+    ratioSquare: "Square (1:1)",
+    ratioPortrait: "Portrait (3:4)",
+    ratioLandscape: "Landscape (4:3)",
+    ratioTall: "Tall (9:16)"
   },
   fr: {
     appTitle: "ScienceSnap",
@@ -109,7 +113,11 @@ export const translations = {
     audienceKids: "Pour Enfants",
     audienceAdults: "Pro / Adulte",
     modelFlash: "Flash",
-    modelPro: "Pro (HD)"
+    modelPro: "Pro (HD)",
+    ratioSquare: "Carré (1:1)",
+    ratioPortrait: "Portrait (3:4)",
+    ratioLandscape: "Paysage (4:3)",
+    ratioTall: "Grand (9:16)"
   }
 };
 

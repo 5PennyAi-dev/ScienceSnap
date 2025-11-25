@@ -1,13 +1,13 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppState, ScientificFact, InfographicItem, Language, AIStudio, Audience, ImageModelType } from './types';
+import { AppState, ScientificFact, InfographicItem, Language, AIStudio, Audience, ImageModelType, AspectRatio } from './types';
 import { generateScientificFacts, generateInfographicPlan, generateInfographicImage, generateFactFromConcept } from './services/geminiService';
 import { uploadImageToStorage } from './services/imageUploadService';
 import { FactCard } from './components/FactCard';
 import { GalleryGrid } from './components/GalleryGrid';
 import { ImageModal } from './components/ImageModal';
-import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby, Zap } from 'lucide-react';
+import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby, Zap, Square, RectangleVertical, RectangleHorizontal, Smartphone } from 'lucide-react';
 import { db } from './db';
 import { tx, id } from "@instantdb/react";
 import { getTranslation } from './translations';
@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   const [audience, setAudience] = useState<Audience>('young');
   const [imageModel, setImageModel] = useState<ImageModelType>(IMAGE_MODEL_PRO);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(AspectRatio.PORTRAIT);
   const [appState, setAppState] = useState<AppState>('input');
   
   // Search State
@@ -171,7 +172,7 @@ const App: React.FC = () => {
       setAppState('generating');
       setLoadingMessage(t.loadingRendering);
       
-      const image = await generateInfographicImage(plan, imageModel);
+      const image = await generateInfographicImage(plan, imageModel, aspectRatio);
       setCurrentImage(image);
       setAppState('result');
       
@@ -257,14 +258,14 @@ const App: React.FC = () => {
 
       <nav className="flex items-center gap-3">
         {/* Model Toggle */}
-        <div className="hidden md:flex bg-indigo-900/50 rounded-full border border-white/10 p-1 mr-2">
+        <div className="hidden lg:flex bg-indigo-900/50 rounded-full border border-white/10 p-1 mr-2">
             <button 
                 onClick={() => setImageModel(IMAGE_MODEL_FLASH)}
                 className={`px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1 ${imageModel === IMAGE_MODEL_FLASH ? 'bg-amber-400 text-indigo-950 shadow-lg' : 'text-indigo-300 hover:text-white'}`}
                 title={t.modelFlash}
             >
                 <Zap className="w-3 h-3" />
-                <span className="hidden lg:inline">Flash</span>
+                <span className="hidden xl:inline">Flash</span>
             </button>
             <button 
                 onClick={() => setImageModel(IMAGE_MODEL_PRO)}
@@ -272,7 +273,39 @@ const App: React.FC = () => {
                 title={t.modelPro}
             >
                 <Sparkles className="w-3 h-3" />
-                <span className="hidden lg:inline">Pro</span>
+                <span className="hidden xl:inline">Pro</span>
+            </button>
+        </div>
+
+         {/* Aspect Ratio Selector */}
+         <div className="hidden md:flex bg-indigo-900/50 rounded-full border border-white/10 p-1 mr-2">
+            <button 
+                onClick={() => setAspectRatio(AspectRatio.SQUARE)}
+                className={`p-1.5 rounded-full transition-all ${aspectRatio === AspectRatio.SQUARE ? 'bg-white text-indigo-950' : 'text-indigo-300 hover:text-white'}`}
+                title={t.ratioSquare}
+            >
+                <Square className="w-4 h-4" />
+            </button>
+            <button 
+                onClick={() => setAspectRatio(AspectRatio.PORTRAIT)}
+                className={`p-1.5 rounded-full transition-all ${aspectRatio === AspectRatio.PORTRAIT ? 'bg-white text-indigo-950' : 'text-indigo-300 hover:text-white'}`}
+                title={t.ratioPortrait}
+            >
+                <RectangleVertical className="w-4 h-4" />
+            </button>
+             <button 
+                onClick={() => setAspectRatio(AspectRatio.LANDSCAPE)}
+                className={`p-1.5 rounded-full transition-all ${aspectRatio === AspectRatio.LANDSCAPE ? 'bg-white text-indigo-950' : 'text-indigo-300 hover:text-white'}`}
+                title={t.ratioLandscape}
+            >
+                <RectangleHorizontal className="w-4 h-4" />
+            </button>
+             <button 
+                onClick={() => setAspectRatio(AspectRatio.TALL)}
+                className={`p-1.5 rounded-full transition-all ${aspectRatio === AspectRatio.TALL ? 'bg-white text-indigo-950' : 'text-indigo-300 hover:text-white'}`}
+                title={t.ratioTall}
+            >
+                <Smartphone className="w-4 h-4" />
             </button>
         </div>
 
@@ -598,6 +631,7 @@ const App: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onUpdate={updateGalleryItem}
         model={imageModel}
+        aspectRatio={aspectRatio}
         labels={{
             details: t.modalDetails,
             domain: t.modalDomain,
