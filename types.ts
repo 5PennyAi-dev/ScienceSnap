@@ -26,6 +26,8 @@ export type Language = 'en' | 'fr';
 
 export type Audience = 'young' | 'adult';
 
+export type ImageModelType = 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview';
+
 export interface AIStudio {
   hasSelectedApiKey: () => Promise<boolean>;
   openSelectKey: () => Promise<void>;

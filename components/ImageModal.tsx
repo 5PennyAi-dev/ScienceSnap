@@ -1,5 +1,7 @@
+
+
 import React, { useState } from 'react';
-import { InfographicItem } from '../types';
+import { InfographicItem, ImageModelType } from '../types';
 import { X, Download, Wand2, RefreshCcw, Loader2 } from 'lucide-react';
 import { editInfographic } from '../services/geminiService';
 
@@ -21,9 +23,10 @@ interface ImageModalProps {
   onClose: () => void;
   onUpdate: (updatedItem: InfographicItem) => void;
   labels: ImageModalLabels;
+  model: ImageModelType;
 }
 
-export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, onUpdate, labels }) => {
+export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, onUpdate, labels, model }) => {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -74,7 +77,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose, o
     setIsEditing(true);
     setError(null);
     try {
-      const newImageUrl = await editInfographic(item.imageUrl, editPrompt);
+      const newImageUrl = await editInfographic(item.imageUrl, editPrompt, model);
       onUpdate({ ...item, imageUrl: newImageUrl });
       setEditPrompt('');
     } catch (err) {

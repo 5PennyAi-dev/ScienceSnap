@@ -1,7 +1,6 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { ScientificFact, Language, Audience } from "../types";
-import { TEXT_MODEL, IMAGE_MODEL, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT } from "../constants";
+import { ScientificFact, Language, Audience, ImageModelType } from "../types";
+import { TEXT_MODEL, IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO, FACT_GENERATION_PROMPT, INFOGRAPHIC_PLAN_PROMPT, CONCEPT_EXPLANATION_PROMPT } from "../constants";
 
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
@@ -30,6 +29,44 @@ const injectAudience = (prompt: string, audience: Audience) => {
     .replace(/{{TARGET_AUDIENCE}}/g, config.target)
     .replace(/{{TONE}}/g, config.tone)
     .replace(/{{VISUAL_STYLE}}/g, config.visualStyle);
+};
+
+// Helper to ensure we have a base64 string
+const ensureBase64 = async (input: string): Promise<{ data: string, mimeType: string }> => {
+  // If it's a URL (http/https), fetch it
+  if (input.startsWith('http')) {
+    try {
+      const response = await fetch(input);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          // Result is "data:image/png;base64,..."
+          const match = result.match(/^data:(image\/\w+);base64,(.+)$/);
+          if (match) {
+            resolve({ mimeType: match[1], data: match[2] });
+          } else {
+            reject(new Error("Failed to parse base64 from blob"));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.error("Failed to convert URL to base64", e);
+      throw new Error("Could not process image URL");
+    }
+  }
+
+  // If it's already a data URL
+  const match = input.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (match) {
+    return { mimeType: match[1], data: match[2] };
+  }
+
+  // Assume raw base64 string implies png if no header
+  return { mimeType: 'image/png', data: input };
 };
 
 export const generateScientificFacts = async (domain: string, lang: Language, audience: Audience): Promise<ScientificFact[]> => {
@@ -132,24 +169,41 @@ export const generateInfographicPlan = async (fact: ScientificFact, lang: Langua
   }
 };
 
-export const generateInfographicImage = async (plan: string): Promise<string> => {
+export const generateInfographicImage = async (plan: string, model: ImageModelType): Promise<string> => {
   const ai = getAiClient();
+
+  const config: any = {
+      imageConfig: {
+          aspectRatio: "3:4", 
+      }
+  };
+
+  if (model === IMAGE_MODEL_PRO) {
+      config.imageConfig.imageSize = "1K";
+  }
+
+  // Explicit instruction to ensure the model behaves as an image generator
+  const prompt = `Generate a high-quality educational infographic image based on the following detailed plan:\n\n${plan}`;
+
   try {
     const response = await ai.models.generateContent({
-      model: IMAGE_MODEL,
-      contents: plan,
-      config: {
-        imageConfig: {
-          aspectRatio: "3:4", // Portrait for infographics
-        }
-      }
+      model: model,
+      contents: { parts: [{ text: prompt }] },
+      config: config
     });
 
     // Extract image
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        return `data:${mimeType};base64,${part.inlineData.data}`;
       }
+    }
+    
+    // Log text response if it failed to generate image (helps debugging)
+    const textPart = response.candidates?.[0]?.content?.parts?.find(p => p.text);
+    if (textPart) {
+      console.warn("Model returned text instead of image:", textPart.text);
     }
     
     throw new Error("No image data found in response");
@@ -159,37 +213,44 @@ export const generateInfographicImage = async (plan: string): Promise<string> =>
   }
 };
 
-export const editInfographic = async (base64Image: string, instruction: string): Promise<string> => {
+export const editInfographic = async (imageInput: string, instruction: string, model: ImageModelType): Promise<string> => {
   const ai = getAiClient();
   try {
-    // Strip prefix if present for the API call
-    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+    // Ensure we have valid base64 data and mimeType, even if input is a URL
+    const { data: cleanBase64, mimeType } = await ensureBase64(imageInput);
+
+    const config: any = {
+        imageConfig: {
+            aspectRatio: "3:4", 
+        }
+    };
+
+    if (model === IMAGE_MODEL_PRO) {
+        config.imageConfig.imageSize = "1K";
+    }
 
     const response = await ai.models.generateContent({
-      model: IMAGE_MODEL,
+      model: model,
       contents: {
         parts: [
           {
-            text: instruction
+            text: `Edit this image: ${instruction}`
           },
           {
             inlineData: {
-              mimeType: 'image/png',
+              mimeType: mimeType,
               data: cleanBase64
             }
           }
         ]
       },
-      config: {
-        imageConfig: {
-            aspectRatio: "3:4", 
-        }
-      }
+      config: config
     });
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
         if (part.inlineData) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+          const respMime = part.inlineData.mimeType || 'image/png';
+          return `data:${respMime};base64,${part.inlineData.data}`;
         }
       }
       

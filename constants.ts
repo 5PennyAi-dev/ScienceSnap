@@ -1,7 +1,9 @@
 
+
 // Models
 export const TEXT_MODEL = 'gemini-2.5-flash';
-export const IMAGE_MODEL = 'gemini-2.5-flash-image';
+export const IMAGE_MODEL_FLASH = 'gemini-2.5-flash-image';
+export const IMAGE_MODEL_PRO = 'gemini-3-pro-image-preview';
 
 // Prompts
 export const FACT_GENERATION_PROMPT = `

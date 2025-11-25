@@ -1,4 +1,5 @@
 
+
 import { Language } from './types';
 
 export const translations = {
@@ -52,7 +53,9 @@ export const translations = {
     errorGenImage: "Failed to create infographic.",
     errorSave: "Failed to save infographic.",
     audienceKids: "For Kids",
-    audienceAdults: "Pro / Adult"
+    audienceAdults: "Pro / Adult",
+    modelFlash: "Flash",
+    modelPro: "Pro (HD)"
   },
   fr: {
     appTitle: "ScienceSnap",
@@ -104,7 +107,9 @@ export const translations = {
     errorGenImage: "Échec de la création de l'infographie.",
     errorSave: "Échec de l'enregistrement de l'infographie.",
     audienceKids: "Pour Enfants",
-    audienceAdults: "Pro / Adulte"
+    audienceAdults: "Pro / Adulte",
+    modelFlash: "Flash",
+    modelPro: "Pro (HD)"
   }
 };
 

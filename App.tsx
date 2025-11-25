@@ -1,19 +1,22 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppState, ScientificFact, InfographicItem, Language, AIStudio, Audience } from './types';
+import { AppState, ScientificFact, InfographicItem, Language, AIStudio, Audience, ImageModelType } from './types';
 import { generateScientificFacts, generateInfographicPlan, generateInfographicImage, generateFactFromConcept } from './services/geminiService';
 import { uploadImageToStorage } from './services/imageUploadService';
 import { FactCard } from './components/FactCard';
 import { GalleryGrid } from './components/GalleryGrid';
 import { ImageModal } from './components/ImageModal';
-import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby } from 'lucide-react';
+import { Atom, ArrowRight, BookOpen, Loader2, Sparkles, Image as ImageIcon, ArrowLeft, Key, Lightbulb, Filter, Search, Grid3X3, Terminal, Rocket, Star, GraduationCap, Baby, Zap } from 'lucide-react';
 import { db } from './db';
 import { tx, id } from "@instantdb/react";
 import { getTranslation } from './translations';
+import { IMAGE_MODEL_FLASH, IMAGE_MODEL_PRO } from './constants';
 
 const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   const [audience, setAudience] = useState<Audience>('young');
+  const [imageModel, setImageModel] = useState<ImageModelType>(IMAGE_MODEL_PRO);
   const [appState, setAppState] = useState<AppState>('input');
   
   // Search State
@@ -168,7 +171,7 @@ const App: React.FC = () => {
       setAppState('generating');
       setLoadingMessage(t.loadingRendering);
       
-      const image = await generateInfographicImage(plan);
+      const image = await generateInfographicImage(plan, imageModel);
       setCurrentImage(image);
       setAppState('result');
       
@@ -253,6 +256,26 @@ const App: React.FC = () => {
       </div>
 
       <nav className="flex items-center gap-3">
+        {/* Model Toggle */}
+        <div className="hidden md:flex bg-indigo-900/50 rounded-full border border-white/10 p-1 mr-2">
+            <button 
+                onClick={() => setImageModel(IMAGE_MODEL_FLASH)}
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1 ${imageModel === IMAGE_MODEL_FLASH ? 'bg-amber-400 text-indigo-950 shadow-lg' : 'text-indigo-300 hover:text-white'}`}
+                title={t.modelFlash}
+            >
+                <Zap className="w-3 h-3" />
+                <span className="hidden lg:inline">Flash</span>
+            </button>
+            <button 
+                onClick={() => setImageModel(IMAGE_MODEL_PRO)}
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1 ${imageModel === IMAGE_MODEL_PRO ? 'bg-fuchsia-500 text-white shadow-lg' : 'text-indigo-300 hover:text-white'}`}
+                title={t.modelPro}
+            >
+                <Sparkles className="w-3 h-3" />
+                <span className="hidden lg:inline">Pro</span>
+            </button>
+        </div>
+
         {/* Language Toggle - Compact */}
         <div className="flex bg-indigo-900/50 rounded-full border border-white/10 p-1">
             <button 
@@ -574,6 +597,7 @@ const App: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUpdate={updateGalleryItem}
+        model={imageModel}
         labels={{
             details: t.modalDetails,
             domain: t.modalDomain,
